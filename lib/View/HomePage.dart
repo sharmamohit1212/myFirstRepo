@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -197,18 +198,29 @@ class _HomePageState extends State<HomePage> {
       "weight": double.parse(weight),
       "weightType": weightType.toString()
     });
-   request.headers.addAll(headers);
+    request.headers.addAll(headers);
 
-    http.StreamedResponse response = await request.send();
-    Navigator.pop(context);
-
-    if (response.statusCode == 200) {
-     Fluttertoast.showToast(msg: "Data Successfully Submit.",
-     backgroundColor: Colors.green,textColor: Colors.white);
-     function(1);
+    try{
+      http.StreamedResponse response = await request.send().timeout(const Duration(seconds: 10));
+      Navigator.pop(context);
+      if (response.statusCode == 200) {
+        Fluttertoast.showToast(msg: "Data Successfully Submit.",
+            backgroundColor: Colors.green,textColor: Colors.white);
+        function(1);
+        print(await response.stream.bytesToString());
+      }else{
+        Fluttertoast.showToast(msg: 'Failed to load data: ${response.statusCode}');
+      }
+    }on http.ClientException catch (e){
+      Navigator.pop(context);
+      Fluttertoast.showToast(msg: 'Client error: $e');
+    } on TimeoutException {
+      Navigator.pop(context);
+      Fluttertoast.showToast(msg: "Request timed out. Please try again later.");
     }
-    else {
-    print(response.reasonPhrase);
+    catch(e){
+      Navigator.pop(context);
+      Fluttertoast.showToast(msg: "An unexpected error occurred: $e");
     }
   }
 
